@@ -174,19 +174,19 @@ public class EmbeddedKafkaBroker implements Closeable {
 
         BrokerConfig.providedConfig(brokerConfig);
         BrokerConfig.defaultStaticConfig(brokerConfig);
-        BrokerConfig.defaultCoreConfig(brokerConfig, host, kafkaPort, internalPort, controllerPort, defaultProtocol);
+        //BrokerConfig.defaultCoreConfig(brokerConfig, host, kafkaPort, internalPort, controllerPort, defaultProtocol);
 
         Storage.ensureLogDirExists(brokerConfig);
 
         long start = System.currentTimeMillis();
         this.config = KafkaConfig.fromProps(brokerConfig, false);
-        var zkMode = brokerConfig.containsKey(KafkaConfig.ZkConnectProp());
+        boolean kraft = brokerConfig.containsKey(KafkaConfig.ProcessRolesProp());
         Server server;
-        if (zkMode) {
-            server = new KafkaServer(config, Time.SYSTEM, Option.apply(KAFKA_PREFIX), false);
-        } else {
+        if (kraft) {
             Storage.formatStorageFromConfig(config, clusterId, true);
             server = new KafkaRaftServer(config, Time.SYSTEM, Option.apply(KAFKA_PREFIX));
+        } else {
+            server = new KafkaServer(config, Time.SYSTEM, Option.apply(KAFKA_PREFIX), false);
         }
         server.startup();
         this.kafkaServer = server;
